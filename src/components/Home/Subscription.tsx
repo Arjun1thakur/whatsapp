@@ -119,7 +119,7 @@ export default function Subscription() {
             {/* End Avatar Group */}
             {/* Form */}
             <form>
-              <div className="mx-auto max-w-2xl sm:flex sm:space-x-3 p-3 border rounded-lg shadow-lg shadow-primary-foreground ">
+              <div className="mx-auto max-w-2xl sm:flex sm:space-x-3 p-3 border rounded-lg ">
                 {/* <div className="pb-2 sm:pb-0 sm:flex-[1_0_0%]">
                   <Label htmlFor="name">
                     <span className="sr-only">Your name</span>

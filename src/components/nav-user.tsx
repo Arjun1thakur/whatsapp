@@ -39,9 +39,7 @@ export function NavUser({
   user: any
 }) {
   const { isMobile } = useSidebar()
-  useEffect(() => {
-    console.log(user)
-  })
+ 
   const handleSignOut = async () => {
     try {
       await signOut(auth);
