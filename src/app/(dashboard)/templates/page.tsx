@@ -5,7 +5,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import Breadcrumbbox from "@/components/Breadcrumb/Breadcrumbbox"
-import { DataTableDemo } from "@/components/Table/Table"
+import { TemplatesTable } from "@/components/Table/TemplatesTable"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { doc, getDoc } from "firebase/firestore"
@@ -64,7 +64,7 @@ export default function Page() {
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <DataTableDemo data={templates}/>
+        <TemplatesTable data={templates}/>
       </div>
     </SidebarInset>
     </>

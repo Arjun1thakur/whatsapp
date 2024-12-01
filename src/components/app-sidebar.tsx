@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   Code,
+  Contact,
   Frame,
   LayoutTemplate,
   LifeBuoy,
@@ -73,6 +74,26 @@ const data = {
       title: "Templates",
       url: "/templates",
       icon: LayoutTemplate,
+      isActive: true,
+      // items: [
+      //   {
+      //     title: "History",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Starred",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Settings",
+      //     url: "#",
+      //   },
+      // ],
+    },
+    {
+      title: "Contacts",
+      url: "/contacts",
+      icon: Contact,
       isActive: true,
       // items: [
       //   {

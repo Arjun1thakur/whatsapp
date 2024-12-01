@@ -74,7 +74,7 @@ export const columns: ColumnDef<Payment>[] = [
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("name")}</div>
+      <div className="capitalize p-0">{row.getValue("name")}</div>
     ),
   },
   {
@@ -154,7 +154,7 @@ export const columns: ColumnDef<Payment>[] = [
   },
 ]
 
-export function DataTableDemo({ data }: { data: Payment[] }) {
+export function TemplatesTable({ data }: { data: Payment[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -176,7 +176,7 @@ export function DataTableDemo({ data }: { data: Payment[] }) {
     onRowSelectionChange: setRowSelection,
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 10  ,
       },
     },
     state: {
@@ -212,7 +212,7 @@ export function DataTableDemo({ data }: { data: Payment[] }) {
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize"
+                    className="capitalize "
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) =>
                       column.toggleVisibility(!!value)
@@ -253,7 +253,7 @@ export function DataTableDemo({ data }: { data: Payment[] }) {
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell  key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
