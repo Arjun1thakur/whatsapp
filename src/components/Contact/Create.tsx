@@ -11,9 +11,11 @@ import { PhoneInput } from '@/components/Contact/phone-input'
 import { TagInput } from '@/components/Contact/source-input'
 import { SourceInput } from '@/components/Contact/tag-input'
 import { useAuth } from '@/contexts/AuthContext'
-import {  arrayUnion, doc, setDoc } from 'firebase/firestore'
+import { arrayUnion, doc, setDoc } from 'firebase/firestore'
 import { storedb } from '@/config/config'
 import { useToast } from '@/hooks/use-toast'
+import { Badge } from '../ui/badge'
+import { CircleUser } from 'lucide-react'
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -34,14 +36,9 @@ interface Tag {
 }
 
 export function ContactForm() {
-    const {user} = useAuth();
-    const {toast} = useToast();
-  const [tags, setTags] = useState<Tag[]>([
-    { value: 'important', label: 'Important', color: '#ff0000' },
-    { value: 'new-lead', label: 'New Lead', color: '#00ff00' },
-    { value: 'follow-up', label: 'Follow Up', color: '#0000ff' },
-  ])
-  const [sources, setSources] = useState<string[]>(['Custom', 'Imported'])
+  const { user } = useAuth();
+  const { toast } = useToast();
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,55 +47,51 @@ export function ContactForm() {
       phoneNumber: "",
       countryCode: "+1",
       tags: [],
-      source: "",
+      source: "Custom",
     },
   })
 
- 
+  const tags = form.watch("tags")
+
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const timestamp = new Date().toISOString()
     console.log({ ...values, createdAt: timestamp })
     try {
-        if (!user?.uid) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'User not authenticated',
-          });
-          return;
-        }
-    
-        // Reference the user's document directly
-        const userDocRef = doc(storedb, "Contacts", user.uid);
-    
-        // Update the user's document with the new contact data
-        await setDoc(
-          userDocRef,
-          {
-            contacts: arrayUnion({ ...values, createdAt: timestamp }),
-          },
-          { merge: true } // Merge to avoid overwriting existing data
-        );
-    
-        form.reset(); // Reset the form after successful submission
-    
-        toast({
-          title: 'Success',
-          description: 'Contact added successfully',
-        });
-      } catch (error) {
-        console.error("Error adding contact:", error);
+      if (!user?.uid) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'There was an error adding the contact',
+          description: 'User not authenticated',
         });
-      }   
-  }
+        return;
+      }
 
-  const handleCreateTag = (newTag: Tag) => {
-    setTags([...tags, newTag])
+      const userDocRef = doc(storedb, "Contacts", user.uid);
+
+      await setDoc(
+        userDocRef,
+        {
+          contacts: arrayUnion({ ...values, createdAt: timestamp }),
+        },
+        { merge: true }
+      );
+
+      form.reset();
+
+      toast({
+        title: 'Success',
+        description: 'Contact added successfully',
+      });
+    } catch (error) {
+      console.error("Error adding contact:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'There was an error adding the contact',
+      });
+    }
   }
 
   return (
@@ -137,48 +130,43 @@ export function ContactForm() {
           )}
         />
 
-        {/* <FormField
+        <FormField
           control={form.control}
           name="tags"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tags</FormLabel>
+              <br />
               <FormControl>
-                <TagInput
-                  tags={tags}
-                  selectedTags={field.value}
-                  onTagsChange={field.onChange}
-                  onCreateTag={handleCreateTag}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
-
-        <FormField
-          control={form.control}
-          name="source"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Source</FormLabel>
-              <FormControl>
-                <SourceInput
-                  sources={sources}
-                  onSourcesChange={(newSources) => {
-                    setSources(newSources)
-                    field.onChange(newSources[newSources.length - 1])
-                  }}
-                />
+                <TagInput tags={field.value} onChange={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit">Submit</Button>
+        {/* If no tags are selected, display this message */}
+        {form.watch("tags").length === 0 ? (
+          <p>No tag selected yet.</p>
+        ) : (
+          <div>
+            {form.watch("tags").map((tag) => (
+              <Badge style={{ marginRight: 5 }} key={tag}>
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+
+        {/* Ensure the button is on a new line */}
+        <Button type="submit" className='w-full flex items-center'>
+          <CircleUser className="mr-2 h-4 w-4" /> Create Contact
+        </Button>
+
       </form>
     </Form>
   )
 }
+
 

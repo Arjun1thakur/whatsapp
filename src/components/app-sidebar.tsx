@@ -55,20 +55,20 @@ const data = {
       url: "/campaign",
       icon: SquareTerminal,
       isActive: true,
-      // items: [
-      //   {
-      //     title: "History",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Starred",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Settings",
-      //     url: "#",
-      //   },
-      // ],
+      items: [
+        {
+          title: "Create",
+          url: "/campaign/create",
+        },
+        // {
+        //   title: "Starred",
+        //   url: "#",
+        // },
+        // {
+        //   title: "Settings",
+        //   url: "#",
+        // },
+      ],
     },
     {
       title: "Templates",

@@ -13,8 +13,14 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from "lucide-react"
-
+import { ArrowUpDown, Calendar, ChevronDown, FilePlus, Globe, MoreHorizontal, Phone, Plus, Tag, User } from "lucide-react"
+import { TableMeta } from "@tanstack/react-table";
+import Papa from "papaparse";
+declare module "@tanstack/react-table" {
+  interface TableMeta<TData> {
+    deleteContact?: deleteContact;
+  }
+}
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -48,17 +54,42 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import WhatsAppEditor from "../Editor/Editor"
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { Separator } from "../ui/separator"
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { arrayUnion, doc, setDoc } from "firebase/firestore";
+import { storedb } from "@/config/config";
 
 export type Payment = {
+  createdAt: any
+  tags: any
   countryCode: string
   phoneNumber: string
   name: string
   category: string
   component: any
+  source: string
   id: string
   language: string
   status: string
   parameter_format: string
+}
+
+export type deleteContact = (phoneNumber: string) => Promise<void>;
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short'
+  });
 }
 
 export const columns: ColumnDef<Payment>[] = [
@@ -177,9 +208,9 @@ export const columns: ColumnDef<Payment>[] = [
   {
     id: "actions",
     enableHiding: false,
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const payment = row.original
-
+      const deleteContact = table.options.meta?.deleteContact;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -195,18 +226,89 @@ export const columns: ColumnDef<Payment>[] = [
             >
               Copy JSON
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              {/* <Drawer>
-                <DrawerTrigger> */}
-
-              <Button >Send Message</Button>
-              {/* </DrawerTrigger>
-                <DrawerContent>
-
-                </DrawerContent>
-              </Drawer> */}
+            {/* <DropdownMenuSeparator /> */}
+            <DropdownMenuItem
+              onClick={() => {
+                if (deleteContact) {
+                  deleteContact(payment.phoneNumber).catch((err) =>
+                    console.error("Error deleting contact:", err)
+                  );
+                }
+              }}
+            >
+              Delete Contact
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button>Send Message</Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <div className="p-4">
+                    <DrawerTitle>Send a Message</DrawerTitle>
+                    <DrawerDescription>
+                      Fill out the form below to send a message.
+                    </DrawerDescription>
+                  </div>
+                  <div className="p-4 gap-4 flex">
+                    <Card className="w-full max-w-2xl mx-auto flex-1">
+                      <CardHeader>
+                        <CardTitle className="text-2xl font-bold">Contact Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <User className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-lg font-medium">{payment.name}</span>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center space-x-2">
+                          <Phone className="w-5 h-5 text-muted-foreground" />
+                          <span>{payment.countryCode} {payment.phoneNumber}</span>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-5 h-5 text-muted-foreground" />
+                          <span>{formatDate(payment.createdAt)}</span>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center space-x-2">
+                          <Tag className="w-5 h-5 text-muted-foreground" />
+                          <div className="space-x-2">
+                            {payment && payment.tags.map((tag: string, index: number) => (
+                              <Badge key={index} variant="secondary">{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center space-x-2">
+                          <Globe className="w-5 h-5 text-muted-foreground" />
+                          <span>{payment && payment.source as string}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <WhatsAppEditor data={payment} />
+                  </div>
+                  <DrawerFooter className="flex justify-end gap-2 flex-1">
+                    <DrawerClose asChild>
+                      <div className="absolute bottom-4 right-4">
+                        <p className="text-sm text-muted-foreground">Powered by Team Alpha. </p>
+                      </div>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+            </DropdownMenuItem>
+
+
             {/* <DropdownMenuItem>View payment details</DropdownMenuItem> */}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -215,7 +317,7 @@ export const columns: ColumnDef<Payment>[] = [
   },
 ]
 
-export function ContactTable({ data }: { data: Payment[] }) {
+export function ContactTable({ data, deleteContact }: { data: Payment[], deleteContact: deleteContact }) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -246,7 +348,114 @@ export function ContactTable({ data }: { data: Payment[] }) {
       columnVisibility,
       rowSelection,
     },
+    meta: {
+      deleteContact, // Pass deleteContact function here
+    },
   })
+
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const { toast } = useToast();
+  const {user} = useAuth();
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No file selected",
+      });
+      return;
+    }
+  
+    // Parse CSV file using PapaParse
+    Papa.parse(file, {
+      header: true, // Assume the first row contains headers
+      skipEmptyLines: true, // Skip empty rows
+      complete: async (results: { data: { name: string; number: string | number; }[]; }) => {
+        const rows = results.data as { name: string; number: string | number }[];
+  
+        if (!rows || rows.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "CSV file is empty or invalid",
+          });
+          return;
+        }
+  
+        // Initialize an array to hold valid contacts
+        const validContacts = rows.filter(
+          (row) => row.name && row.number // Only include rows with name and number
+        );
+  
+        if (validContacts.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No valid rows found in the CSV file",
+          });
+          return;
+        }
+  
+        try {
+          const timestamp = new Date().toISOString();
+  
+          if (!user?.uid) {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "User not authenticated",
+            });
+            return;
+          }
+  
+          const userDocRef = doc(storedb, "Contacts", user.uid);
+  
+          // Save contacts to Firestore
+          await setDoc(
+            userDocRef,
+            {
+              contacts: arrayUnion(
+                ...validContacts.map((contact) => ({
+                  ...contact,
+                  createdAt: timestamp,
+                }))
+              ),
+            },
+            { merge: true }
+          );
+  
+          toast({
+            title: "Success",
+            description: `${validContacts.length} contact(s) added successfully`,
+          });
+        } catch (error) {
+          console.error("Error uploading contacts:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "There was an error uploading the contacts",
+          });
+        }
+      },
+      error: (error: any) => {
+        console.error("Error parsing CSV file:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "There was an error processing the CSV file",
+        });
+      },
+    });
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   return (
     <>
@@ -261,6 +470,23 @@ export function ContactTable({ data }: { data: Payment[] }) {
             className="max-w-sm"
           />
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={triggerFileInput}
+                className="flex items-center gap-2"
+              >
+                <FilePlus className="w-5 h-5" />
+                Upload CSV
+              </Button>
+            </div>
             <Popover >
               <PopoverTrigger asChild>
                 <Button ><Plus size={48} strokeWidth={3} /> </Button>
